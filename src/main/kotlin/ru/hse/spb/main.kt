@@ -1,13 +1,75 @@
 package ru.hse.spb
 
-fun getGreeting(): String {
-    val words = mutableListOf<String>()
-    words.add("Hello,")
-    words.add("world!")
+import java.lang.StringBuilder
+import java.util.*
+import java.util.stream.Collectors
 
-    return words.joinToString(separator = " ")
+enum class BHtmlTag {
+    Table, EndTable, TR, EndTR, TD, EndTD, NULL
 }
 
+fun toTagList(table: String): List<BHtmlTag> {
+    val list = StringTokenizer(table, ">").toList()
+    return list.stream().map<BHtmlTag> { x ->
+        val s = x.toString()
+        when {
+            s.endsWith("<td") -> BHtmlTag.TD
+            s.endsWith("<tr") -> BHtmlTag.TR
+            s.endsWith("<table") -> BHtmlTag.Table
+            s.endsWith("</td") -> BHtmlTag.EndTD
+            s.endsWith("</tr") -> BHtmlTag.EndTR
+            s.endsWith("</table") -> BHtmlTag.EndTable
+            else -> BHtmlTag.NULL
+        }
+    }.collect(Collectors.toList())
+}
+
+fun tableSize(tagIt: Iterator<BHtmlTag>, result: MutableList<Int>) {
+    var size = 0
+    var inTable = true
+    while (inTable && tagIt.hasNext()) {
+        val tag = tagIt.next()
+        when (tag) {
+            BHtmlTag.TR -> size += rowSize(tagIt, result)
+            BHtmlTag.EndTable -> inTable = false
+            else -> {
+            }
+        }
+    }
+    result.add(size)
+}
+
+fun rowSize(tagIt: Iterator<BHtmlTag>, result: MutableList<Int>): Int {
+    var size = 0
+    var inRow = true
+    while (inRow && tagIt.hasNext()) {
+        val tag = tagIt.next()
+        when (tag) {
+            BHtmlTag.TD -> size++
+            BHtmlTag.Table -> tableSize(tagIt, result)
+            BHtmlTag.EndTR -> inRow = false
+            else -> {
+            }
+        }
+    }
+    return size
+}
+
+fun readTable(): String {
+    val stringBuilder = StringBuilder()
+    while (true) {
+        val line = readLine()
+        if (line != null) stringBuilder.append(line) else break
+    }
+    return stringBuilder.toString()
+}
+
+
 fun main(args: Array<String>) {
-    println(getGreeting())
+    val list = toTagList(readTable())
+    val result = ArrayList<Int>()
+    tableSize(list.iterator(), result)
+    result.sort()
+    result.forEach { i -> print("$i ") }
+    println()
 }
