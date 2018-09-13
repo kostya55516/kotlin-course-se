@@ -2,7 +2,6 @@ package ru.hse.spb
 
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.anyOf
-import org.hamcrest.core.Is
 import org.junit.Assert.assertThat
 import org.junit.Before
 import org.junit.Test

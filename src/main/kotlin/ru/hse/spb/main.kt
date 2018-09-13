@@ -10,8 +10,8 @@ enum class BHtmlTag {
 
 fun toTagList(table: String): List<BHtmlTag> {
     val list = StringTokenizer(table, ">").toList()
-    return list.stream().map<BHtmlTag> { x ->
-        val s = x.toString()
+    return list.map {
+        val s = it.toString()
         when {
             s.endsWith("<td") -> BHtmlTag.TD
             s.endsWith("<tr") -> BHtmlTag.TR
@@ -21,7 +21,7 @@ fun toTagList(table: String): List<BHtmlTag> {
             s.endsWith("</table") -> BHtmlTag.EndTable
             else -> BHtmlTag.NULL
         }
-    }.collect(Collectors.toList())
+    }
 }
 
 fun tableSize(tagIt: Iterator<BHtmlTag>, result: MutableList<Int>) {
@@ -58,8 +58,7 @@ fun rowSize(tagIt: Iterator<BHtmlTag>, result: MutableList<Int>): Int {
 fun readTable(): String {
     val stringBuilder = StringBuilder()
     while (true) {
-        val line = readLine()
-        if (line != null) stringBuilder.append(line) else break
+        stringBuilder.append(readLine() ?: break)
     }
     return stringBuilder.toString()
 }
@@ -70,6 +69,5 @@ fun main(args: Array<String>) {
     val result = ArrayList<Int>()
     tableSize(list.iterator(), result)
     result.sort()
-    result.forEach { i -> print("$i ") }
-    println()
+    println(result.joinToString(separator = " "))
 }
