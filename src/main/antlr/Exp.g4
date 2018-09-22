@@ -1,32 +1,70 @@
 grammar Exp;
 
+file: body=block EOF;
 
-eval returns [double value]
-    :    exp=additionExp {$value = $exp.value;}
+block: (statement)*;
+
+statement: function | variable | expression | whileLoop | ifStatement | assigment | returnStatement;
+
+function: 'fun' name=IDENTIFIER '(' params=parameterNames ')' '{'  body=block '}';
+
+variable: 'var' name=IDENTIFIER ('=' exp=expression)?;
+
+parameterNames: (IDENTIFIER (',' IDENTIFIER)*)?;
+
+whileLoop: 'while' '(' cond=expression ')' '{'  body=block '}';
+
+ifStatement: 'if' '(' cond=expression ')' '{'  ifBody=block '}' ('else' '{'  elseBody=block '}')?;
+
+assigment: name=IDENTIFIER '=' value=expression;
+
+returnStatement: 'return' value=expression;
+
+expression
+    : functionCall
+    | identifier
+    | literal
+    | bracedExpression
+    | <assoc=left> left=expression (op=MUL | op=DIV | op=MOD) right=expression
+    | <assoc=left> left=expression (op=PLUS | op=MINUS) right=expression
+    | left=expression (op=LE | op=GR | op=GRQ | op=LEQ) right=expression
+    | left=expression ( op=EQ | op=NEQ) right=expression
+    | left=expression op=AND right=expression
+    | left=expression op=OR right=expression
     ;
 
-additionExp returns [double value]
-    :    m1=multiplyExp       {$value =  $m1.value;}
-         ( '+' m2=multiplyExp {$value += $m2.value;}
-         | '-' m2=multiplyExp {$value -= $m2.value;}
-         )*
-    ;
+identifier: IDENTIFIER;
 
-multiplyExp returns [double value]
-    :    a1=atomExp       {$value =  $a1.value;}
-         ( '*' a2=atomExp {$value *= $a2.value;}
-         | '/' a2=atomExp {$value /= $a2.value;}
-         )*
-    ;
+literal: LITERAL;
 
-atomExp returns [double value]
-    :    n=Number                {$value = Double.parseDouble($n.text);}
-    |    '(' exp=additionExp ')' {$value = $exp.value;}
-    ;
+bracedExpression: '(' exp=expression ')';
+
+functionCall: name=IDENTIFIER '(' args=arguments ')';
+
+arguments: (expression (',' expression))?;
 
 
-Number
-    :    ('0'..'9')+ ('.' ('0'..'9')+)?
-    ;
+PLUS: '+';
+MUL: '*';
+MINUS: '-';
+DIV: '/';
+MOD: '%';
+AND: '&&';
+OR: '||';
+LE: '<';
+GR: '>';
+LEQ: '<=';
+GRQ: '>=';
+EQ: '==';
+NEQ: '!=';
 
-WS : (' ' | '\t' | '\r'| '\n') -> skip;
+IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;
+
+LITERAL:    [1-9][0-9]? | '0';
+
+ENDLINE:  ('\r')? '\n' | '\r';
+
+WS : (' ' | '\t' | ENDLINE | COMMENTS) -> skip;
+
+COMMENTS: '//' .*? ENDLINE?;
+//TODO eof comment
