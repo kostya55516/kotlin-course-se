@@ -18,7 +18,9 @@ class Visitor : ExpBaseVisitor<SyntaxNode>() {
     }
 
     override fun visitFunction(ctx: ExpParser.FunctionContext): SyntaxNode {
-        return Function(ctx.name.text, ctx.params.IDENTIFIER().map { it.text }, ctx.body.accept(this) as Block)
+        return Function(ctx.name.text,
+                ctx.params.IDENTIFIER()?.map { it.text } ?: emptyList(),
+                ctx.body.accept(this) as Block)
     }
 
     override fun visitVariable(ctx: ExpParser.VariableContext): SyntaxNode {
@@ -86,6 +88,6 @@ class Visitor : ExpBaseVisitor<SyntaxNode>() {
     }
 
     override fun visitArguments(ctx: ExpParser.ArgumentsContext): SyntaxNode {
-        return Arguments(ctx.children.map { it.accept(this) as Expression })
+        return Arguments(ctx.expression()?.map { it.accept(this) as Expression } ?: emptyList())
     }
 }

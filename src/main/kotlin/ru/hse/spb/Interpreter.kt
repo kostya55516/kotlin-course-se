@@ -7,6 +7,12 @@ import kotlin.collections.HashMap
 class Interpreter(private val block: Block) {
 
     var scope: Scope = Scope()
+    init {
+        scope.functions["println"] = {
+            println(it.joinToString(" "))
+            0
+        }
+    }
 
     fun interpret(): Int {
         return block.eval()
@@ -19,7 +25,7 @@ class Interpreter(private val block: Block) {
         statements.forEach {
             val res = it.eval()
             if (it is Return) {
-                result ?: throw Exception("second return in block")
+                result?.apply { throw Exception("second return in block") }
                 result = res
             }
         }
@@ -29,12 +35,15 @@ class Interpreter(private val block: Block) {
 
     private fun Function.eval(): Int {
         scope.functions[name] = { values: List<Int> ->
+            if (values.size != params.size) {
+                throw Exception("wrong count of parameters for function $name")
+            }
             val oldScope = scope
             scope = Scope(scope)
             params.zip(values).forEach { (k, v) ->
                 scope.variables[k] = OptionalInt.of(v)
             }
-            val result = block.eval()
+            val result = body.eval()
 
             scope = oldScope
             result
@@ -120,11 +129,10 @@ class Dictionary<T>(private val parent: Dictionary<T>? = null) {
     private val map = HashMap<String, T?>()
 
     operator fun get(name: String): T {
-        return map[name]
-                ?: if (parent == null) throw Exception("$name is not defined in this scope") else parent[name]
+        return map[name] ?: parent?.get(name) ?: throw Exception("$name is not defined in this scope")
     }
 
     operator fun set(name: String, value: T?) {
-        map.put(name, value) ?: throw Exception("$name is already defined in this scope")
+        map.put(name, value)?.also { throw Exception("$name is already defined in this scope") }
     }
 }

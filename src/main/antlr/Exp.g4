@@ -33,16 +33,15 @@ expression
     | left=expression op=OR right=expression
     ;
 
-identifier: IDENTIFIER;
-
-literal: LITERAL;
+functionCall: name=IDENTIFIER '(' args=arguments ')';
 
 bracedExpression: '(' exp=expression ')';
 
-functionCall: name=IDENTIFIER '(' args=arguments ')';
+arguments: (expression (',' expression)*)?;
 
-arguments: (expression (',' expression))?;
+identifier: IDENTIFIER;
 
+literal: LITERAL;
 
 PLUS: '+';
 MUL: '*';
