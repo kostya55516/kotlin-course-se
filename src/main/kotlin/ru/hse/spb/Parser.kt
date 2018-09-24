@@ -8,10 +8,5 @@ import ru.hse.spb.parser.ExpParser
 class Parser(charStream: CharStream) {
     val lexer = ExpLexer(charStream)
     val parser = ExpParser(BufferedTokenStream(lexer))
-    val block: Block
-
-    init {
-        val visitor = Visitor()
-        block = parser.file().accept(visitor) as Block
-    }
+    val result = lazy { parser.file().accept(Visitor()) as Block }
 }

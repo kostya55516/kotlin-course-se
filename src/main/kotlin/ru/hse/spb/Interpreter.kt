@@ -5,8 +5,10 @@ import kotlin.Exception
 import kotlin.collections.HashMap
 
 class Interpreter(private val block: Block) {
+    val result = lazy { block.eval() }
 
-    var scope: Scope = Scope()
+    private var scope: Scope = Scope()
+
     init {
         scope.functions["println"] = {
             println(it.joinToString(" "))
@@ -14,26 +16,22 @@ class Interpreter(private val block: Block) {
         }
     }
 
-    fun interpret(): Int {
-        return block.eval()
-    }
-
-    private fun Block.eval(): Int {
+    private fun Block.eval(): Int? {
         val oldScope = scope
         scope = Scope(scope)
         var result: Int? = null
         for (st in statements) {
             val res = st.eval()
-            if (st is Return) {
+            if (st !is Expression) {
                 result = res
-                break
+                if (st is Return) break
             }
         }
         scope = oldScope
-        return result ?: 0
+        return result
     }
 
-    private fun Function.eval(): Int {
+    private fun Function.eval(): Int? {
         scope.functions[name] = { values: List<Int> ->
             if (values.size != params.size) {
                 throw Exception("wrong count of parameters for function $name")
@@ -46,33 +44,34 @@ class Interpreter(private val block: Block) {
             val result = body.eval()
 
             scope = oldScope
-            result
+            result ?: 0
         }
-        return 0
+        return null
     }
 
-    private fun Variable.eval(): Int {
+    private fun Variable.eval(): Int? {
         scope.variables[name] = exp?.eval()?.let { OptionalInt.of(it) } ?: OptionalInt.empty()
-        return 0
+        return null
     }
 
-    private fun While.eval(): Int {
+    private fun While.eval(): Int? {
         while (condition.eval() != 0) {
-            body.eval()
+            val res = body.eval()
+            if (res != null) return res
         }
-        return 0
+        return null
     }
 
-    private fun If.eval(): Int {
+    private fun If.eval(): Int? {
         if (condition.eval() != 0) {
             return ifBody.eval()
         }
-        return elseBody?.eval() ?: 0
+        return elseBody?.eval()
     }
 
-    private fun Assignment.eval(): Int {
+    private fun Assignment.eval(): Int? {
         scope.variables[name] = OptionalInt.of(value.eval())
-        return 0
+        return null
     }
 
     private fun FunctionCall.eval(): Int {
@@ -105,7 +104,7 @@ class Interpreter(private val block: Block) {
         }
     }
 
-    private fun Statement.eval(): Int {
+    private fun Statement.eval(): Int? {
         return when (this) {
             is Block -> eval()
             is Function -> eval()
