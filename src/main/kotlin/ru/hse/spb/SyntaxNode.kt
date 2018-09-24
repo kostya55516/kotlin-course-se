@@ -4,7 +4,6 @@ interface SyntaxNode
 interface Statement : SyntaxNode
 interface Expression : Statement
 
-data class File(val block: Block) : SyntaxNode
 data class Arguments(val args: List<Expression>) : SyntaxNode
 
 data class Block(val statements: List<Statement>) : Statement

@@ -13,8 +13,7 @@ fun main(args: Array<String>) {
                     "var x = 4" +
                     "return a(x * 3, 5)"
     ))
-    val block = parser.invoke()
-    println(block)
-    val result = Interpreter(block).interpret()
+    println(parser.block)
+    val result = Interpreter(parser.block).interpret()
     println(result)
 }

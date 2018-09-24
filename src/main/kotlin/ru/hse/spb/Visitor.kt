@@ -9,8 +9,8 @@ class Visitor : ExpBaseVisitor<SyntaxNode>() {
         return ctx.body.accept(this)
     }
 
-    override fun visitBlock(ctx: ExpParser.BlockContext): SyntaxNode {
-        return Block(ctx.children.map { it.accept(this) as Statement })
+    override fun visitBlock(ctx: ExpParser.BlockContext?): SyntaxNode {
+        return Block(ctx?.children?.map { it.accept(this) as Statement } ?: emptyList())
     }
 
     override fun visitStatement(ctx: ExpParser.StatementContext): SyntaxNode {
@@ -24,7 +24,7 @@ class Visitor : ExpBaseVisitor<SyntaxNode>() {
     }
 
     override fun visitVariable(ctx: ExpParser.VariableContext): SyntaxNode {
-        return Variable(ctx.name.text, ctx.exp.accept(this) as Expression)
+        return Variable(ctx.name.text, ctx.exp?.accept(this) as Expression?)
     }
 
     override fun visitWhileLoop(ctx: ExpParser.WhileLoopContext): SyntaxNode {
@@ -34,7 +34,7 @@ class Visitor : ExpBaseVisitor<SyntaxNode>() {
     override fun visitIfStatement(ctx: ExpParser.IfStatementContext): SyntaxNode {
         return If(ctx.cond.accept(this) as Expression,
                 ctx.ifBody.accept(this) as Block,
-                ctx.elseBody.accept(this) as Block)
+                ctx.elseBody?.accept(this) as Block?)
     }
 
     override fun visitAssigment(ctx: ExpParser.AssigmentContext): SyntaxNode {

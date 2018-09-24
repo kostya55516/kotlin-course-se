@@ -22,11 +22,11 @@ class Interpreter(private val block: Block) {
         val oldScope = scope
         scope = Scope(scope)
         var result: Int? = null
-        statements.forEach {
-            val res = it.eval()
-            if (it is Return) {
-                result?.apply { throw Exception("second return in block") }
+        for (st in statements) {
+            val res = st.eval()
+            if (st is Return) {
                 result = res
+                break
             }
         }
         scope = oldScope

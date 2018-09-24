@@ -61,9 +61,8 @@ IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;
 
 LITERAL:    [1-9][0-9]? | '0';
 
-ENDLINE:  ('\r')? '\n' | '\r';
+ENDLINE:  '\n' | '\r\n' | '\r';
 
 WS : (' ' | '\t' | ENDLINE | COMMENTS) -> skip;
 
-COMMENTS: '//' .*? ENDLINE?;
-//TODO eof comment
+COMMENTS: '//' .*? (ENDLINE | EOF);
