@@ -85,6 +85,6 @@ class Visitor : ExpBaseVisitor<SyntaxNode>() {
 
     override fun visitFunctionCall(ctx: ExpParser.FunctionCallContext): SyntaxNode {
         return FunctionCall(ctx.name.text,
-                ctx.args.expression()?.map{ it.accept(this) as Expression } ?: emptyList())
+                ctx.args.expression()?.map { it.accept(this) as Expression } ?: emptyList())
     }
 }

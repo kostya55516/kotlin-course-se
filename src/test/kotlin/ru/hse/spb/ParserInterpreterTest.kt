@@ -81,7 +81,7 @@ class ParserInterpreterTest {
                 "fun foo(a) {\n" +
                         "   var x = a * a\n" +
                         "   return x\n" +
-                "a = 15\n" +
+                        "a = 15\n" +
                         "}\n" +
                         "return foo(5)"
         )
@@ -118,7 +118,7 @@ class ParserInterpreterTest {
     @Test
     fun funScopeTest() {
         val result = result(
-                        "fun foo() { " +
+                "fun foo() { " +
                         "   fun foo() { return 9 }\n" +
                         "   return foo() + 7\n" +
                         "}\n" +

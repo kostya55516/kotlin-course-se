@@ -5,7 +5,16 @@ import kotlin.Exception
 import kotlin.collections.HashMap
 
 class Interpreter(private val block: Block) {
-    val result by lazy { block.eval() }
+    val result by lazy {
+        var res: Int? = null
+
+        try {
+            res = block.eval()
+        } catch (e: Throwable) {
+            println("Interpretor error: ${e.message}")
+        }
+        return@lazy res ?: 0
+    }
 
     private var scope: Scope = Scope()
 
