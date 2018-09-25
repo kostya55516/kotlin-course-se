@@ -10,7 +10,7 @@ fun main(args: Array<String>) {
                     "}" +
                     "return main()"
     ))
-    println(parser.result.value)
-    val result = Interpreter(parser.result.value).result.value
+    println(parser.result)
+    val result = Interpreter(parser.result).result
     println(result)
 }

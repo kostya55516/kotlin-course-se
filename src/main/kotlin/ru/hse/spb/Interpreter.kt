@@ -5,7 +5,7 @@ import kotlin.Exception
 import kotlin.collections.HashMap
 
 class Interpreter(private val block: Block) {
-    val result = lazy { block.eval() }
+    val result by lazy { block.eval() }
 
     private var scope: Scope = Scope()
 
@@ -70,12 +70,12 @@ class Interpreter(private val block: Block) {
     }
 
     private fun Assignment.eval(): Int? {
-        scope.variables[name] = OptionalInt.of(value.eval())
+        scope.variables.putRec(name, OptionalInt.of(value.eval()))
         return null
     }
 
     private fun FunctionCall.eval(): Int {
-        return scope.functions[name](args.args.map { it.eval() })
+        return scope.functions[name](args.map { it.eval() })
     }
 
     private fun Identifier.eval(): Int {
@@ -129,6 +129,13 @@ class Dictionary<T>(private val parent: Dictionary<T>? = null) {
 
     operator fun get(name: String): T {
         return map[name] ?: parent?.get(name) ?: throw Exception("$name is not defined in this scope")
+    }
+
+    fun contains(name: String): Boolean = map[name]?.let { true } ?: parent?.contains(name) ?: false
+
+    fun putRec(name: String, value: T?) {
+        map[name]?.also { map[name] = value } ?: parent?.putRec(name, value)
+        ?: throw Exception("$name is not defined in this scope")
     }
 
     operator fun set(name: String, value: T?) {
