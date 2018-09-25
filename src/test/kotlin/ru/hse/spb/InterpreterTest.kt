@@ -15,7 +15,7 @@ class InterpreterTest {
     @Test
     fun emptyProgramTest() {
         val result = result()
-        assertNull(result)
+        assertThat(result, `is`(0))
     }
 
     @Test
