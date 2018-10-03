@@ -6,97 +6,96 @@ interface TexElement {
     fun accept(visitor: TexVisitor)
 }
 
-class Frame : TexElement {
+private val pairToString: (Pair<String, String>) -> String = { "${it.first}=${it.second}" }
+
+class CustomTag(val name: String,  val options: Array<out String>) : TagWithBody() {
+    constructor(name: String, options: Array<out Pair<String, String>>)
+            : this(name, options.map(pairToString).toTypedArray())
+
+    override fun accept(visitor: TexVisitor) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+}
+
+class Frame(val frameTitle: String, val options: Array<out String>) : TagWithBody() {
+    constructor(title: String, options: Array<out Pair<String, String>>)
+            : this(title, options.map(pairToString).toTypedArray())
+
     override fun accept(visitor: TexVisitor) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
 
 data class TexText(val text: String) : TexElement {
-    override fun accept(visitor: TexVisitor) {
-        visitor.visit(this)
-        visitor.exit(this)
-    }
+    override fun accept(visitor: TexVisitor) = visitor.visitTexText(this)
 }
 
-open class Itemize : TexElement {
-    protected val items = ArrayList<Item>()
-
-    fun item(init: Item.() -> Unit): Item {
-        val item = Item()
-        item.init()
-        items.add(item)
-        return item
-    }
-
-    override fun accept(visitor: TexVisitor) {
-        visitor.visit(this)
-        for (item in items) {
-            item.accept(visitor)
-        }
-        visitor.exit(this)
-    }
+abstract class TagWithItems : TagWithChildren<Item>() {
+    fun item(option: String? = null, init: Item.() -> Unit) = initElement(Item(option), init)
 }
 
-class Enumerate : Itemize() {
-    override fun accept(visitor: TexVisitor) {
-        visitor.visit(this)
-        for (item in items) {
-            item.accept(visitor)
-        }
-        visitor.exit(this)
-    }
+open class Itemize : TagWithItems() {
+    override fun accept(visitor: TexVisitor) = visitor.visitItemize(this)
 }
 
-data class Package(val name: String, val options: List<String>) : TexElement {
-    override fun accept(visitor: TexVisitor) {
-        visitor.visit(this)
-        visitor.exit(this)
-    }
+class Enumerate : TagWithItems() {
+    override fun accept(visitor: TexVisitor) = visitor.visitEnumerate(this)
 }
 
-abstract class TagWithBody: TexElement {
-    val children = ArrayList<TexElement>()
+data class Package(val name: String, val options: Array<out String>) : TexElement {
+    override fun accept(visitor: TexVisitor) = visitor.visitPackage(this)
+}
 
-    fun itemize(init: Itemize.() -> Unit): Itemize {
-        val itemize = Itemize()
-        itemize.init()
-        children.add(itemize)
-        return itemize
+abstract class TagWithChildren<T : TexElement> : TexElement {
+    protected val children = ArrayList<T>()
+
+    protected fun <G : T> initElement(elem: G, init: G.() -> Unit): G {
+        elem.init()
+        children += elem
+        return elem
     }
 
-    fun enumerate(init: Enumerate.() -> Unit): Enumerate {
-        val enum = Enumerate()
-        enum.init()
-        children.add(enum)
-        return enum
+    fun acceptChildren(visitor: TexVisitor) = children.forEach { it.accept(visitor) }
+}
+
+
+abstract class TagWithBody : TagWithChildren<TexElement>() {
+    fun frame(frameTitle: String, vararg params: String, init: Frame.() -> Unit) {
+        initElement(Frame(frameTitle, params), init)
     }
+
+    fun frame(frameTitle: String, vararg params: Pair<String, String>, init: Frame.() -> Unit) {
+        initElement(Frame(frameTitle, params), init)
+    }
+
+    fun customTag(name: String, vararg params: String, init: CustomTag.() -> Unit) {
+        initElement(CustomTag(name, params), init)
+    }
+
+    fun customTag(name: String, vararg params: Pair<String, String>, init: CustomTag.() -> Unit) {
+        initElement(CustomTag(name, params), init)
+    }
+
+    fun itemize(init: Itemize.() -> Unit) = initElement(Itemize(), init)
+
+    fun enumerate(init: Enumerate.() -> Unit) = initElement(Enumerate(), init)
 
     operator fun String.unaryPlus() {
-        children.add(TexText(this))
+        children += TexText(this)
     }
-
 }
-
-class Item : TagWithBody() {
-    override fun accept(visitor: TexVisitor) {
-        visitor.visit(this)
-        for (child in children) {
-            child.accept(visitor)
-        }
-        visitor.exit(this)
-    }
-
+class Item(val option: String?) : TagWithBody() {
+    override fun accept(visitor: TexVisitor) = visitor.visitItem(this)
 }
 
 class Document : TagWithBody() {
-    var documentClass: String? = null
+    var documentClass: String = "default"
     var documentOptions: Array<out String>? = null
 
-    val packages = ArrayList<Package>()
+    private val packages = ArrayList<Package>()
 
     fun usepackage(name: String, vararg options: String) {
-        packages.add(Package(name, options.toList()))
+        packages += Package(name, options)
     }
 
     fun documentClass(name: String, vararg options: String) {
@@ -104,16 +103,9 @@ class Document : TagWithBody() {
         documentOptions = options
     }
 
-    override fun accept(visitor: TexVisitor) {
-        visitor.visit(this)
-        for (pack in packages) {
-            pack.accept(visitor)
-        }
-        for (child in children) {
-            child.accept(visitor)
-        }
-        visitor.exit(this)
-    }
+    fun acceptPackages(visitor: TexVisitor) = packages.forEach { it.accept(visitor) }
+
+    override fun accept(visitor: TexVisitor) = visitor.visitDocument(this)
 
     override fun toString(): String {
         val visitor = ToStringVisitor()
@@ -123,12 +115,11 @@ class Document : TagWithBody() {
 }
 
 
-fun document(init:Document.() -> Unit) : Document {
+fun document(init: Document.() -> Unit): Document {
     val doc = Document()
     doc.init()
     return doc
 }
-
 
 
 fun main(args: Array<String>) {
@@ -141,7 +132,7 @@ fun main(args: Array<String>) {
             item { +"papapa" }
         }
         enumerate {
-            item { +"ulyalya" }
+            item("lol") { +"ulyalya" }
         }
     })
 }

@@ -1,23 +1,15 @@
 interface TexVisitor {
-    fun visit(document: Document)
-    fun exit(document: Document)
-    fun visit(enumerate: Enumerate)
-    fun exit(enumerate: Enumerate)
-    fun visit(itemize: Itemize)
-    fun exit(itemize: Itemize)
-    fun visit(item: Item)
-    fun exit(item: Item)
-    fun visit(pack: Package)
-    fun exit(pack: Package)
-    fun visit(element: TexElement)
-    fun exit(element: TexElement)
-    fun visit(texText: TexText)
-    fun exit(texText: TexText)
+    fun visitDocument(document: Document)
+    fun visitEnumerate(enumerate: Enumerate)
+    fun visitItemize(itemize: Itemize)
+    fun visitItem(item: Item)
+    fun visitPackage(pack: Package)
+    fun visitTexElement(element: TexElement)
+    fun visitTexText(texText: TexText)
 }
 
 class ToStringVisitor : TexVisitor {
     private val builder = StringBuilder()
-    private var beginDocument: (() -> Unit)? = null
     private var spaces: String = ""
 
     private fun addSpaces() {
@@ -32,79 +24,63 @@ class ToStringVisitor : TexVisitor {
         builder.append("$spaces$s\n")
     }
 
-    override fun visit(document: Document) {
+    override fun visitDocument(document: Document) {
         addLine("\\documentClass" +
                 (if (document.documentOptions?.isNotEmpty() == true) "${document.documentOptions}" else "") +
                 "{${document.documentClass}}")
 
-        beginDocument = {
-            addLine("\n\\begin{document}")
-            addSpaces()
-            beginDocument = null
-        }
+        document.acceptPackages(this)
+
+        addLine("\n\\begin{document}")
+        addSpaces()
+
+        document.acceptChildren(this)
+
+        removeSpaces()
+        addLine("\\end{document}")
     }
 
-    override fun exit(document: Document) {
-    }
-
-    override fun visit(enumerate: Enumerate) {
-        beginDocument?.invoke()
+    override fun visitEnumerate(enumerate: Enumerate) {
         addLine("\\begin{enumerate}")
         addSpaces()
-    }
 
-    override fun exit(enumerate: Enumerate) {
+        enumerate.acceptChildren(this)
+
         removeSpaces()
         addLine("\\end{enumerate}")
     }
 
-    override fun visit(itemize: Itemize) {
-        beginDocument?.invoke()
+    override fun visitItemize(itemize: Itemize) {
         addLine("\\begin{itemize}")
         addSpaces()
-    }
 
-    override fun exit(itemize: Itemize) {
+        itemize.acceptChildren(this)
+
         removeSpaces()
         addLine("\\end{itemize}")
     }
 
-    override fun visit(item: Item) {
-        addLine("\\item")
+    override fun visitItem(item: Item) {
+        addLine("\\item${item.option?.let {"[$it]"} ?: "" }")
         addSpaces()
-    }
-
-    override fun exit(item: Item) {
+        item.acceptChildren(this)
         removeSpaces()
     }
 
-    override fun visit(pack: Package) {
+    override fun visitPackage(pack: Package) {
         addLine("\\usepackage${ if (pack.options.isNotEmpty()) "${pack.options}" else "" }{${pack.name}}")
     }
 
 
-    override fun exit(pack: Package) {
-    }
-
     override fun toString(): String {
-        beginDocument?.invoke()
-        removeSpaces()
-        addLine("\\end{document}")
         return builder.toString()
     }
 
-    override fun visit(element: TexElement) {
+    override fun visitTexElement(element: TexElement) {
         addLine("\\begin{texTag}")
     }
 
-    override fun exit(element: TexElement) {
-        addLine("\\end{texTag}")
-    }
-
-    override fun visit(texText: TexText) {
+    override fun visitTexText(texText: TexText) {
         addLine(texText.text)
-    }
-
-    override fun exit(texText: TexText) {
     }
 }
