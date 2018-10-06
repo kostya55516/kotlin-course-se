@@ -1,3 +1,5 @@
+import java.io.PrintStream
+
 @DslMarker
 annotation class TexDsl
 
@@ -8,25 +10,25 @@ interface TexElement {
 
 private val pairToString: (Pair<String, String>) -> String = { "${it.first}=${it.second}" }
 
-class CustomTag(val name: String,  val options: Array<out String>) : TagWithBody() {
+class CustomTag(val name: String, val options: List<String>) : TagWithBody() {
     constructor(name: String, options: Array<out Pair<String, String>>)
-            : this(name, options.map(pairToString).toTypedArray())
+            : this(name, options.map(pairToString))
 
     override fun accept(visitor: TexVisitor) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        visitor.visitCustomTag(this)
     }
 }
 
-class Frame(val frameTitle: String, val options: Array<out String>) : TagWithBody() {
+class Frame(val frameTitle: String, val options: List<String>) : TagWithBody() {
     constructor(title: String, options: Array<out Pair<String, String>>)
-            : this(title, options.map(pairToString).toTypedArray())
+            : this(title, options.map(pairToString))
 
     override fun accept(visitor: TexVisitor) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        visitor.visitFrame(this)
     }
 }
 
-data class TexText(val text: String) : TexElement {
+class TexText(val text: String) : TexElement {
     override fun accept(visitor: TexVisitor) = visitor.visitTexText(this)
 }
 
@@ -34,7 +36,7 @@ abstract class TagWithItems : TagWithChildren<Item>() {
     fun item(option: String? = null, init: Item.() -> Unit) = initElement(Item(option), init)
 }
 
-open class Itemize : TagWithItems() {
+class Itemize : TagWithItems() {
     override fun accept(visitor: TexVisitor) = visitor.visitItemize(this)
 }
 
@@ -42,7 +44,7 @@ class Enumerate : TagWithItems() {
     override fun accept(visitor: TexVisitor) = visitor.visitEnumerate(this)
 }
 
-data class Package(val name: String, val options: Array<out String>) : TexElement {
+class Package(val name: String, val options: List<String>) : TexElement {
     override fun accept(visitor: TexVisitor) = visitor.visitPackage(this)
 }
 
@@ -61,7 +63,7 @@ abstract class TagWithChildren<T : TexElement> : TexElement {
 
 abstract class TagWithBody : TagWithChildren<TexElement>() {
     fun frame(frameTitle: String, vararg params: String, init: Frame.() -> Unit) {
-        initElement(Frame(frameTitle, params), init)
+        initElement(Frame(frameTitle, params.toList()), init)
     }
 
     fun frame(frameTitle: String, vararg params: Pair<String, String>, init: Frame.() -> Unit) {
@@ -69,7 +71,7 @@ abstract class TagWithBody : TagWithChildren<TexElement>() {
     }
 
     fun customTag(name: String, vararg params: String, init: CustomTag.() -> Unit) {
-        initElement(CustomTag(name, params), init)
+        initElement(CustomTag(name, params.toList()), init)
     }
 
     fun customTag(name: String, vararg params: Pair<String, String>, init: CustomTag.() -> Unit) {
@@ -84,6 +86,7 @@ abstract class TagWithBody : TagWithChildren<TexElement>() {
         children += TexText(this)
     }
 }
+
 class Item(val option: String?) : TagWithBody() {
     override fun accept(visitor: TexVisitor) = visitor.visitItem(this)
 }
@@ -95,7 +98,7 @@ class Document : TagWithBody() {
     private val packages = ArrayList<Package>()
 
     fun usepackage(name: String, vararg options: String) {
-        packages += Package(name, options)
+        packages += Package(name, options.toList())
     }
 
     fun documentClass(name: String, vararg options: String) {
@@ -111,6 +114,10 @@ class Document : TagWithBody() {
         val visitor = ToStringVisitor()
         accept(visitor)
         return visitor.toString()
+    }
+
+    fun toOutputStream(printStream: PrintStream) {
+        accept(ToOutputVisitor(printStream))
     }
 }
 
@@ -129,10 +136,35 @@ fun main(args: Array<String>) {
         usepackage("tralala")
         itemize {
             item { +"lol" }
-            item { +"papapa" }
+            item { +"papapa"
+                frame("as", "asd") {
+                }
+            }
         }
         enumerate {
             item("lol") { +"ulyalya" }
         }
     })
+
+    println()
+
+    document {
+        documentClass("beamer")
+        usepackage("babel", "russian" /* varargs */)
+        frame("frametitle", "arg1" to "arg2") {
+            itemize {
+                for (row in listOf(1, 2, 3)) {
+                    item { +"$row text" }
+                }
+            }
+
+            // begin{pyglist}[language=kotlin]...\end{pyglist}
+            customTag("pyglist", "language" to "kotlin") {
+                +"""
+               |val a = 1
+               |
+            """
+            }
+        }
+    }.toOutputStream(System.out)
 }

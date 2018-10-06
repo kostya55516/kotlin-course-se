@@ -1,3 +1,6 @@
+import java.io.OutputStream
+import java.io.PrintStream
+
 interface TexVisitor {
     fun visitDocument(document: Document)
     fun visitEnumerate(enumerate: Enumerate)
@@ -6,22 +9,31 @@ interface TexVisitor {
     fun visitPackage(pack: Package)
     fun visitTexElement(element: TexElement)
     fun visitTexText(texText: TexText)
+    fun visitFrame(frame: Frame)
+    fun visitCustomTag(customTag: CustomTag)
 }
 
-class ToStringVisitor : TexVisitor {
-    private val builder = StringBuilder()
-    private var spaces: String = ""
+abstract class PrintVisitor : TexVisitor {
+    protected var spaces: String = ""
 
-    private fun addSpaces() {
+    protected fun addSpaces() {
         spaces += "    "
     }
 
-    private fun removeSpaces() {
+    protected fun removeSpaces() {
         spaces = spaces.dropLast(4)
     }
 
-    private fun addLine(s: String) {
-        builder.append("$spaces$s\n")
+    protected abstract fun addLine(s: String)
+
+    private fun <T : TexElement> addScope(elem: TagWithChildren<T>, name: String, options: String = "") {
+        addLine("\\begin{$name}$options")
+        addSpaces()
+
+        elem.acceptChildren(this)
+
+        removeSpaces()
+        addLine("\\end{$name}")
     }
 
     override fun visitDocument(document: Document) {
@@ -31,49 +43,26 @@ class ToStringVisitor : TexVisitor {
 
         document.acceptPackages(this)
 
-        addLine("\n\\begin{document}")
-        addSpaces()
-
-        document.acceptChildren(this)
-
-        removeSpaces()
-        addLine("\\end{document}")
+        addScope(document, "document")
     }
 
     override fun visitEnumerate(enumerate: Enumerate) {
-        addLine("\\begin{enumerate}")
-        addSpaces()
-
-        enumerate.acceptChildren(this)
-
-        removeSpaces()
-        addLine("\\end{enumerate}")
+        addScope(enumerate, "enumerate")
     }
 
     override fun visitItemize(itemize: Itemize) {
-        addLine("\\begin{itemize}")
-        addSpaces()
-
-        itemize.acceptChildren(this)
-
-        removeSpaces()
-        addLine("\\end{itemize}")
+        addScope(itemize, "itemize")
     }
 
     override fun visitItem(item: Item) {
-        addLine("\\item${item.option?.let {"[$it]"} ?: "" }")
+        addLine("\\item${item.option?.let { "[$it]" } ?: ""}")
         addSpaces()
         item.acceptChildren(this)
         removeSpaces()
     }
 
     override fun visitPackage(pack: Package) {
-        addLine("\\usepackage${ if (pack.options.isNotEmpty()) "${pack.options}" else "" }{${pack.name}}")
-    }
-
-
-    override fun toString(): String {
-        return builder.toString()
+        addLine("\\usepackage${if (pack.options.isNotEmpty()) "${pack.options}" else ""}{${pack.name}}")
     }
 
     override fun visitTexElement(element: TexElement) {
@@ -83,4 +72,31 @@ class ToStringVisitor : TexVisitor {
     override fun visitTexText(texText: TexText) {
         addLine(texText.text)
     }
+
+    override fun visitFrame(frame: Frame) {
+        addScope(frame, "frame", (if (frame.options.isNotEmpty()) frame.options.toString() else "")
+                + "{${frame.frameTitle}}")
+    }
+
+    override fun visitCustomTag(customTag: CustomTag) {
+        addScope(customTag, customTag.name, if (customTag.options.isNotEmpty()) customTag.options.toString() else "")
+    }
+}
+
+class ToStringVisitor : PrintVisitor() {
+    private val builder = StringBuilder()
+    override fun addLine(s: String) {
+        builder.append("$spaces$s\n")
+    }
+
+    override fun toString(): String {
+        return builder.toString()
+    }
+}
+
+class ToOutputVisitor(private val printStream: PrintStream) : PrintVisitor() {
+    override fun addLine(s: String) {
+        printStream.println(spaces + s)
+    }
+
 }
