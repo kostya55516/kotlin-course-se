@@ -1,9 +1,9 @@
 import java.io.PrintStream
 
 @DslMarker
-annotation class TexDsl
+annotation class TexDslMarker
 
-@TexDsl
+@TexDslMarker
 interface TexElement {
     fun accept(visitor: TexVisitor)
 }
@@ -59,7 +59,6 @@ abstract class TagWithChildren<T : TexElement> : TexElement {
 
     fun acceptChildren(visitor: TexVisitor) = children.forEach { it.accept(visitor) }
 }
-
 
 abstract class TagWithBody : TagWithChildren<TexElement>() {
     fun frame(frameTitle: String, vararg params: String, init: Frame.() -> Unit) {
@@ -121,12 +120,26 @@ class Document : TagWithBody() {
     }
 }
 
+abstract class TagWithTextChildren : TagWithChildren<TexText>() {
+    operator fun String.unaryPlus() {
+        children += TexText(this)
+    }
+}
+
+class Math : TagWithTextChildren() {
+    override fun accept(visitor: TexVisitor) = visitor.visitMath(this)
+}
+
+class Align(val parameter: String? = null) : TagWithTextChildren() {
+    override fun accept(visitor: TexVisitor) = visitor.visitAlign(this)
+}
 
 fun document(init: Document.() -> Unit): Document {
     val doc = Document()
     doc.init()
     return doc
 }
+
 
 
 fun main(args: Array<String>) {

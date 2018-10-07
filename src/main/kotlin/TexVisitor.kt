@@ -11,6 +11,8 @@ interface TexVisitor {
     fun visitTexText(texText: TexText)
     fun visitFrame(frame: Frame)
     fun visitCustomTag(customTag: CustomTag)
+    fun visitMath(math: Math)
+    fun visitAlign(align: Align)
 }
 
 abstract class PrintVisitor : TexVisitor {
@@ -80,6 +82,14 @@ abstract class PrintVisitor : TexVisitor {
 
     override fun visitCustomTag(customTag: CustomTag) {
         addScope(customTag, customTag.name, if (customTag.options.isNotEmpty()) customTag.options.toString() else "")
+    }
+
+    override fun visitMath(math: Math) {
+        addScope(math, "math")
+    }
+
+    override fun visitAlign(align: Align) {
+        addScope(align, "align", align.parameter?.let { "[$it]" } ?: "")
     }
 }
 
