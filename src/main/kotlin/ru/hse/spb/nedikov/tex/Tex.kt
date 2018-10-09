@@ -1,3 +1,5 @@
+package ru.hse.spb.nedikov.tex
+
 import java.io.PrintStream
 
 @DslMarker
@@ -8,10 +10,12 @@ interface TexElement {
     fun accept(visitor: TexVisitor)
 }
 
-private val pairToString: (Pair<String, String>) -> String = { "${it.first}=${it.second}" }
+typealias PairParam = Pair<String, String>
+
+private val pairToString: (PairParam) -> String = { "${it.first}=${it.second}" }
 
 class CustomTag(val name: String, val options: List<String>) : TagWithBody() {
-    constructor(name: String, options: Array<out Pair<String, String>>)
+    constructor(name: String, vararg options: PairParam)
             : this(name, options.map(pairToString))
 
     override fun accept(visitor: TexVisitor) {
@@ -20,7 +24,7 @@ class CustomTag(val name: String, val options: List<String>) : TagWithBody() {
 }
 
 class Frame(val frameTitle: String, val options: List<String>) : TagWithBody() {
-    constructor(title: String, options: Array<out Pair<String, String>>)
+    constructor(title: String, vararg options: PairParam)
             : this(title, options.map(pairToString))
 
     override fun accept(visitor: TexVisitor) {
@@ -65,21 +69,25 @@ abstract class TagWithBody : TagWithChildren<TexElement>() {
         initElement(Frame(frameTitle, params.toList()), init)
     }
 
-    fun frame(frameTitle: String, vararg params: Pair<String, String>, init: Frame.() -> Unit) {
-        initElement(Frame(frameTitle, params), init)
+    fun frame(frameTitle: String, param: PairParam, vararg params: PairParam, init: Frame.() -> Unit) {
+        initElement(Frame(frameTitle, param, *params), init)
     }
 
     fun customTag(name: String, vararg params: String, init: CustomTag.() -> Unit) {
         initElement(CustomTag(name, params.toList()), init)
     }
 
-    fun customTag(name: String, vararg params: Pair<String, String>, init: CustomTag.() -> Unit) {
-        initElement(CustomTag(name, params), init)
+    fun customTag(name: String, param: PairParam, vararg params: PairParam, init: CustomTag.() -> Unit) {
+        initElement(CustomTag(name, param, *params), init)
     }
 
     fun itemize(init: Itemize.() -> Unit) = initElement(Itemize(), init)
 
     fun enumerate(init: Enumerate.() -> Unit) = initElement(Enumerate(), init)
+
+    fun math(init: Math.() -> Unit) = initElement(Math(), init)
+
+    fun align(param: String? = null, init: Align.() -> Unit) = initElement(Align(param), init)
 
     operator fun String.unaryPlus() {
         children += TexText(this)
@@ -91,8 +99,8 @@ class Item(val option: String?) : TagWithBody() {
 }
 
 class Document : TagWithBody() {
-    var documentClass: String = "default"
-    var documentOptions: Array<out String>? = null
+    var documentClass: String? = null
+    var documentOptions: List<String>? = null
 
     private val packages = ArrayList<Package>()
 
@@ -102,7 +110,9 @@ class Document : TagWithBody() {
 
     fun documentClass(name: String, vararg options: String) {
         documentClass = name
-        documentOptions = options
+        if (options.isNotEmpty()) {
+            documentOptions = options.toList()
+        }
     }
 
     fun acceptPackages(visitor: TexVisitor) = packages.forEach { it.accept(visitor) }
@@ -143,24 +153,6 @@ fun document(init: Document.() -> Unit): Document {
 
 
 fun main(args: Array<String>) {
-    println(document {
-        documentClass("lol")
-        usepackage("lolpack", "lol2", "lol3")
-        usepackage("tralala")
-        itemize {
-            item { +"lol" }
-            item { +"papapa"
-                frame("as", "asd") {
-                }
-            }
-        }
-        enumerate {
-            item("lol") { +"ulyalya" }
-        }
-    })
-
-    println()
-
     document {
         documentClass("beamer")
         usepackage("babel", "russian" /* varargs */)

@@ -1,4 +1,5 @@
-import java.io.OutputStream
+package ru.hse.spb.nedikov.tex
+
 import java.io.PrintStream
 
 interface TexVisitor {
@@ -39,9 +40,11 @@ abstract class PrintVisitor : TexVisitor {
     }
 
     override fun visitDocument(document: Document) {
-        addLine("\\documentClass" +
-                (if (document.documentOptions?.isNotEmpty() == true) "${document.documentOptions}" else "") +
-                "{${document.documentClass}}")
+        if (document.documentClass != null) {
+            addLine("\\documentClass" +
+                    (document.documentOptions?.let { it } ?: "") +
+                    "{${document.documentClass}}")
+        }
 
         document.acceptPackages(this)
 
