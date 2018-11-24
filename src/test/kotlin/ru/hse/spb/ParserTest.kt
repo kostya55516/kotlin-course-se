@@ -183,10 +183,11 @@ class ParserTest {
 
     @Test
     fun largeBlockTest() {
-        val parser = parserFromString("" +
-                "var x = 2 > 8 " +
-                "lol " +
-                "1 + 2")
+        val parser = parserFromString(
+                """|var x = 2 > 8 
+                    |lol 
+                    |1 + 2""".trimMargin()
+        )
         assertThat(parser.result, `is`(blockWith(
                 Variable("x", binary(2, 8, GR)),
                 Identifier("lol"),
@@ -202,8 +203,7 @@ class ParserTest {
 
     @Test
     fun commentWithCodeTest() {
-        val parser = parserFromString("//lol\n" +
-                "42")
+        val parser = parserFromString("//lol\n42")
         assertThat(parser.result, `is`(blockWith(Literal(42))))
     }
 
