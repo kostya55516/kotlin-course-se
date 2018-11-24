@@ -6,14 +6,12 @@ import kotlin.collections.HashMap
 
 class Interpreter(private val block: Block) {
     val result by lazy {
-        var res: Int? = null
-
         try {
-            res = block.eval()
+            return@lazy block.eval() ?: 0
         } catch (e: Throwable) {
             println("Interpretor error: ${e.message}")
+            return@lazy 1
         }
-        return@lazy res ?: 0
     }
 
     private var scope: Scope = Scope()

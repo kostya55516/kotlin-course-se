@@ -1,21 +1,21 @@
 package ru.hse.spb
 
-interface SyntaxNode
-interface Statement : SyntaxNode
-interface Expression : Statement
+sealed class SyntaxNode
+sealed class Statement : SyntaxNode()
+sealed class Expression : Statement()
 
-data class Block(val statements: List<Statement> = emptyList()) : Statement
-data class Function(val name: String, val params: List<String>, val body: Block) : Statement
-data class Variable(val name: String, val exp: Expression?) : Statement
-data class While(val condition: Expression, val body: Block) : Statement
-data class If(val condition: Expression, val ifBody: Block, val elseBody: Block? = null) : Statement
-data class Assignment(val name: String, val value: Expression) : Statement
-data class Return(val value: Expression) : Statement
+data class Block(val statements: List<Statement> = emptyList()) : Statement()
+data class Function(val name: String, val params: List<String>, val body: Block) : Statement()
+data class Variable(val name: String, val exp: Expression?) : Statement()
+data class While(val condition: Expression, val body: Block) : Statement()
+data class If(val condition: Expression, val ifBody: Block, val elseBody: Block? = null) : Statement()
+data class Assignment(val name: String, val value: Expression) : Statement()
+data class Return(val value: Expression) : Statement()
 
-data class FunctionCall(val name: String, val args: List<Expression> = emptyList()) : Expression
-data class Identifier(val name: String) : Expression
-data class Literal(val value: Int) : Expression
-data class BinaryExpression(val left: Expression, val right: Expression, val operation: Operation) : Expression {
+data class FunctionCall(val name: String, val args: List<Expression> = emptyList()) : Expression()
+data class Identifier(val name: String) : Expression()
+data class Literal(val value: Int) : Expression()
+data class BinaryExpression(val left: Expression, val right: Expression, val operation: Operation) : Expression()     {
     enum class Operation(val func: (Int, Int) -> Int) {
         PLUS({ x, y -> x + y }),
         MINUS({ x, y -> x - y }),

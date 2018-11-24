@@ -16,7 +16,7 @@ class ParserInterpreterTest {
     @Test
     fun emptyProgramTest() {
         val result = result("")
-        assertNull(result)
+        assertThat(result, `is`(0))
     }
 
     @Test
@@ -35,8 +35,9 @@ class ParserInterpreterTest {
     @Test
     fun variableTest() {
         val result = result(
-                "var x = 42 \n" +
-                        "return x"
+                """|var x = 42 
+                    |return x
+                    |""".trimMargin()
         )
         assertThat(result, `is`(42))
     }
@@ -45,9 +46,10 @@ class ParserInterpreterTest {
     @Test
     fun assignmentTest() {
         val result = result(
-                "var x\n" +
-                        "x = 42\n" +
-                        "return x"
+                """|var x
+                    |x = 42
+                    |return x
+                    |""".trimMargin()
         )
         assertThat(result, `is`(42))
     }
@@ -55,10 +57,11 @@ class ParserInterpreterTest {
     @Test
     fun doubleAssignmentTest() {
         val result = result(
-                "var x\n" +
-                        "x = 42\n" +
-                        "x = 53\n" +
-                        "return x"
+                """|var x
+                    |x = 42
+                    |x = 53
+                    |return x
+                    |""".trimMargin()
         )
         assertThat(result, `is`(53))
     }
@@ -66,11 +69,12 @@ class ParserInterpreterTest {
     @Test
     fun functionTest() {
         val result = result(
-                "fun foo() {\n" +
-                        "   var x = 2 + 3\n" +
-                        "   return x\n" +
-                        "}\n" +
-                        "return foo()\n"
+                """|fun foo() {
+                    |   var x = 2 + 3
+                    |   return x
+                    |}
+                    |return foo()
+                    |""".trimMargin()
         )
         assertThat(result, `is`(5))
     }
@@ -78,12 +82,13 @@ class ParserInterpreterTest {
     @Test
     fun functionArgsTest() {
         val result = result(
-                "fun foo(a) {\n" +
-                        "   var x = a * a\n" +
-                        "   return x\n" +
-                        "a = 15\n" +
-                        "}\n" +
-                        "return foo(5)"
+                """|fun foo(a) {
+                    |   var x = a * a
+                    |   return x
+                    |   a = 15
+                    |}
+                    |return foo(5)
+                    |""".trimMargin()
         )
         assertThat(result, `is`(25))
     }
@@ -91,12 +96,13 @@ class ParserInterpreterTest {
     @Test
     fun functionParamScopeTest() {
         val result = result(
-                "var a = 15\n" +
-                        "fun foo(a) {\n" +
-                        "   var x = a * a\n" +
-                        "   return x\n" +
-                        "}\n" +
-                        "return foo(5) + a"
+                """|var a = 15
+                    |fun foo(a) {
+                    |   var x = a * a
+                    |   return x
+                    |}
+                    |return foo(5) + a
+                    |""".trimMargin()
         )
         assertThat(result, `is`(40))
     }
@@ -104,13 +110,14 @@ class ParserInterpreterTest {
     @Test
     fun varScopeTest() {
         val result = result(
-                "var a = 15\n" +
-                        "var x = 20\n" +
-                        "fun foo() {\n" +
-                        "   var a = 20\n" +
-                        "   return a == x\n" +
-                        "}\n" +
-                        "return foo() && (a == 15)"
+                """|var a = 15
+                    |var x = 20
+                    |fun foo() {
+                    |   var a = 20
+                    |   return a == x
+                    |}
+                    |return foo() && (a == 15)
+                    |""".trimMargin()
         )
         assertThat(result, not(0))
     }
@@ -118,11 +125,12 @@ class ParserInterpreterTest {
     @Test
     fun funScopeTest() {
         val result = result(
-                "fun foo() { " +
-                        "   fun foo() { return 9 }\n" +
-                        "   return foo() + 7\n" +
-                        "}\n" +
-                        "return foo()"
+                """|fun foo() {
+                    |   fun foo() { return 9 }
+                    |   return foo() + 7
+                    |}
+                    |return foo()
+                    |""".trimMargin()
         )
         assertThat(result, `is`(16))
     }
@@ -130,13 +138,14 @@ class ParserInterpreterTest {
     @Test
     fun whileTest() {
         val result = result(
-                "var i = 0\n" +
-                        "var x = 0\n" +
-                        "while(i < 5) {\n" +
-                        "   x = x + i\n" +
-                        "   i = i + 1\n" +
-                        "}\n" +
-                        "return x\n"
+                """|var i = 0
+                    |var x = 0
+                    |while(i < 5) {
+                    |   x = x + i
+                    |   i = i + 1
+                    |}
+                    |return x
+                    |""".trimMargin()
         )
         assertThat(result, `is`(10))
     }
