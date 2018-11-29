@@ -145,9 +145,7 @@ class Align(val parameter: String? = null) : TagWithTextChildren() {
 }
 
 fun document(init: Document.() -> Unit): Document {
-    val doc = Document()
-    doc.init()
-    return doc
+    return Document().apply(init)
 }
 
 

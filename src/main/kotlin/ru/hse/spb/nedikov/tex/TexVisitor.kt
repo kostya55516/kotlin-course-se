@@ -17,14 +17,17 @@ interface TexVisitor {
 }
 
 abstract class PrintVisitor : TexVisitor {
+    private companion object {
+        const val IDENT: String = "    "
+    }
     protected var spaces: String = ""
 
-    protected fun addSpaces() {
-        spaces += "    "
+    private fun addSpaces() {
+        spaces += IDENT
     }
 
-    protected fun removeSpaces() {
-        spaces = spaces.dropLast(4)
+    private fun removeSpaces() {
+        spaces = spaces.dropLast(IDENT.length)
     }
 
     protected abstract fun addLine(s: String)
